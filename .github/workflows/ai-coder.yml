@@ -26,17 +26,16 @@ jobs:
 
       - name: 🧠 Автономное чтение и переписывание кода ИИ
         env:
-          # Используем бесплатный встроенный ИИ-сервер GitHub для Actions
+          # Подключение к бесплатной нейросети через встроенные модели GitHub
           OPENAI_API_BASE: https://azure.com
           OPENAI_API_KEY: \${{ secrets.AI_AGENT_TOKEN }}
           AIDER_MODEL: openai/gpt-4o
         run: |
-          # Настройка подписи робота
+          # Настройка виртуального Git-пользователя для коммитов
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@://github.com"
           
-          # Агент получает текст вашей задачи, сам сканирует C# проект,
-          # понимает связь с InputBox и вносит умные точечные правки
+          # Запуск ИИ-разработчика с текстом вашей задачи
           aider --yes --message " github.event.issue.title . Подробное описание: {{ github.event.issue.body }}"
 
       - name: 📦 Отправка изменений в Pull Request
