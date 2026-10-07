@@ -1,4 +1,5 @@
-name: 🤖 AI Developer Agent
+name: AI Developer Agent
+
 on:
   issues:
     types: [opened, edited]
@@ -8,46 +9,41 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'ai-code')
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Скачивание проекта
+      - name: Checkout project
         uses: actions/checkout@v4
         with:
-          token: \${{ secrets.AI_AGENT_TOKEN }}
+          token: ${{ secrets.AI_AGENT_TOKEN }}
           fetch-depth: 0
 
-      - name: 🐍 Установка Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: ⚙️ Установка ИИ-инструмента
+      - name: Install AI Tooling
         run: |
           python -m pip install --upgrade pip
           pip install aider-chat
 
-      - name: 🧠 Автономное чтение и переписывание кода ИИ
+      - name: Run AI Agent
         env:
-          # Подключение к бесплатной нейросети через встроенные модели GitHub
           OPENAI_API_BASE: https://azure.com
-          OPENAI_API_KEY: \${{ secrets.AI_AGENT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.AI_AGENT_TOKEN }}
           AIDER_MODEL: openai/gpt-4o
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          # Настройка виртуального Git-пользователя для коммитов
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@://github.com"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Запуск ИИ-разработчика с текстом вашей задачи
-          aider --yes --message " github.event.issue.title . Подробное описание: {{ github.event.issue.body }}"
+          # Безопасный запуск через системные переменные окружения
+          aider --yes --message "$ISSUE_TITLE. Подробности: $ISSUE_BODY"
 
-      - name: 📦 Отправка изменений в Pull Request
+      - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
-          token: \${{ secrets.AI_AGENT_TOKEN }}
-          commit-message: "🤖 Код автоматически скорректирован ИИ-агентом"
-          title: "🤖 [ИИ-Агент] Выполнены правки по задаче #\${{ github.event.issue.number }}"
-          body: |
-            Я полностью проанализировал ваш проект `PrintCalc3D` и выполнил корректировки на основе вашей команды:
-            
-            **"\${{ github.event.issue.title }}"**
-            
-            Пожалуйста, перейдите во вкладку **Files changed** выше, чтобы принять (`Merge`) или отклонить (`Close`) изменения.
+          token: ${{ secrets.AI_AGENT_TOKEN }}
+          commit-message: "🤖 Код скорректирован ИИ-агентом"
+          title: "🤖 [ИИ-Агент] Правки по задаче"
+          body: "ИИ выполнил корректировки кода на основе вашей команды в тикете. Проверьте вкладку Files changed."
           branch: ai-dynamic-refactoring
