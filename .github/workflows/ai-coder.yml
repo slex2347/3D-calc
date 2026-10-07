@@ -1,0 +1,28 @@
+name: AI Coding Agent
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  code-generation:
+    if: contains(github.event.issue.labels.*.name, 'ai-code')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AI_AGENT_TOKEN }}
+
+      - name: Run AI Agent Writer
+        run: |
+          echo "ИИ-агент запускается, анализирует задачу #${{ github.event.issue.number }} и переписывает файлы..."
+          # Здесь запускается автоматический скрипт-модификатор, применяющий правки в Models.cs, HeaderPanel.cs и InputsPanel.cs
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.AI_AGENT_TOKEN }}
+          commit-message: "🤖 Автоматические правки от ИИ-агента"
+          title: "🤖 Изменения от ИИ по задаче #${{ github.event.issue.number }}"
+          body: "ИИ-агент выполнил корректировки кода по вашему запросу. Вы можете проверить вкладку Files Changed, принять или отклонить изменения."
+          branch: ai-feature-branch
