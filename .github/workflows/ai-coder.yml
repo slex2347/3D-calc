@@ -15,7 +15,7 @@ jobs:
 
       - name: Inject New Code into Models.cs
         run: |
-          cat << 'EOF' > PrintCalc3D/Models.cs
+          cat << 'EOF' > Models.cs
           using System;
           namespace PrintCalc3D {
               public class OrderInputs {
@@ -58,7 +58,7 @@ jobs:
 
       - name: Inject New Code into HeaderPanel.cs
         run: |
-          cat << 'EOF' > PrintCalc3D/HeaderPanel.cs
+          cat << 'EOF' > HeaderPanel.cs
           using System;
           using System.Collections.Generic;
           using System.IO;
@@ -103,7 +103,7 @@ jobs:
 
       - name: Inject New Code into InputsPanel.cs
         run: |
-          cat << 'EOF' > PrintCalc3D/InputsPanel.cs
+          cat << 'EOF' > InputsPanel.cs
           using System;
           using System.Windows.Forms;
           namespace PrintCalc3D {
