@@ -13,16 +13,152 @@ jobs:
         with:
           token: ${{ secrets.AI_AGENT_TOKEN }}
 
-      - name: Run AI Agent Writer
+      - name: Inject New Code into Models.cs
         run: |
-          echo "ИИ-агент запускается, анализирует задачу #${{ github.event.issue.number }} и переписывает файлы..."
-          # Здесь запускается автоматический скрипт-модификатор, применяющий правки в Models.cs, HeaderPanel.cs и InputsPanel.cs
+          cat << 'EOF' > PrintCalc3D/Models.cs
+          using System;
+          namespace PrintCalc3D {
+              public class OrderInputs {
+                  public double WeightGrams { get; set; }
+                  public double Hours { get; set; }
+                  public int PartsCount { get; set; } = 1;
+                  public int BedsCount { get; set; } = 1;
+              }
+              public class Calculator {
+                  public static CalculationResult Calculate(OrderInputs order, AppSettings settings, double printerPrice) {
+                      double workDays = 21.3;
+                      double hoursPerMonth = workDays * settings.HoursPerDay;
+                      double electricityPerHour = settings.PowerKw * settings.ElectricityTariff;
+                      double salaryPerHour = settings.UseSalary ? (settings.MonthlySalary / hoursPerMonth) : 0;
+                      double amortizationPerHour = printerPrice / 12 / hoursPerMonth;
+                      double overheadPerHour = (printerPrice * 0.10) / 6 / hoursPerMonth;
+                      double totalRatePerHour = electricityPerHour + salaryPerHour + amortizationPerHour + overheadPerHour;
+                      double totalHours = order.Hours * order.BedsCount;
+                      double totalWeightKg = (order.WeightGrams * order.PartsCount) / 1000.0;
+                      double plasticCost = totalWeightKg * settings.FilamentPricePerKg;
+                      double operationCost = totalHours * totalRatePerHour;
+                      double costPrice = operationCost + plasticCost;
+                      double clientPrice = costPrice * (1 + settings.MarkupPercent / 100.0);
+                      return new CalculationResult {
+                          CostPrice = Math.Round(costPrice, 2),
+                          ClientPrice = Math.Round(clientPrice, 2),
+                          TotalHours = totalHours,
+                          TotalPlasticCost = Math.Round(plasticCost, 2)
+                      };
+                  }
+              }
+              public class CalculationResult {
+                  public double CostPrice { get; set; }
+                  public double ClientPrice { get; set; }
+                  public double TotalHours { get; set; }
+                  public double TotalPlasticCost { get; set; }
+              }
+          }
+          EOF
+
+      - name: Inject New Code into HeaderPanel.cs
+        run: |
+          cat << 'EOF' > PrintCalc3D/HeaderPanel.cs
+          using System;
+          using System.Collections.Generic;
+          using System.IO;
+          using System.Windows.Forms;
+          namespace PrintCalc3D {
+              public partial class HeaderPanel : UserControl {
+                  private ComboBox cbPrinterSelect;
+                  private Label lblHeaderTitle;
+                  private string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "printers_links.json");
+                  public event Action<string> PrinterChanged;
+                  public HeaderPanel() {
+                      InitializeComponent();
+                      InitializePrinterControls();
+                  }
+                  private void InitializePrinterControls() {
+                      lblHeaderTitle = new Label { Text = "Модель 3D-принтера:", Top = 15, Left = 15, AutoSize = true };
+                      this.Controls.Add(lblHeaderTitle);
+                      cbPrinterSelect = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 280, Top = 12, Left = 160 };
+                      string[] popularPrinters = {
+                          "Bambu Lab P2S Combo", "Bambu Lab X1-Carbon", "Bambu Lab P1S Combo", "Bambu Lab A1 Combo", "Bambu Lab A1 Mini",
+                          "Creality K1 Max", "Creality K1C", "Creality K2 Plus Combo", "Creality Ender-3 V3",
+                          "Anycubic Kobra 3 Combo", "Elegoo Neptune 4 Pro", "Elegoo Neptune 4 Max", "PICASO 3D Designer X Pro"
+                      };
+                      cbPrinterSelect.Items.AddRange(popularPrinters);
+                      cbPrinterSelect.SelectedIndex = 0;
+                      cbPrinterSelect.SelectedIndexChanged += (s, e) => { PrinterChanged?.Invoke(cbPrinterSelect.SelectedItem.ToString()); };
+                      this.Controls.Add(cbPrinterSelect);
+                      if (!File.Exists(configPath)) { CreateDefaultLinksFile(popularPrinters); }
+                  }
+                  private void CreateDefaultLinksFile(string[] printers) {
+                      List<string> lines = new List<string> { "{" };
+                      for (int i = 0; i < printers.Length; i++) {
+                          string comma = (i == printers.Length - 1) ? "" : ",";
+                          lines.Add($"  \"{printers[i]}\": [\"https://example.com\"]{comma}");
+                      }
+                      lines.Add("}");
+                      File.WriteAllLines(configPath, lines.ToArray());
+                  }
+              }
+          }
+          EOF
+
+      - name: Inject New Code into InputsPanel.cs
+        run: |
+          cat << 'EOF' > PrintCalc3D/InputsPanel.cs
+          using System;
+          using System.Windows.Forms;
+          namespace PrintCalc3D {
+              public partial class InputsPanel : UserControl {
+                  private TextBox txtWeight;
+                  private TextBox txtHours;
+                  private TextBox txtPartsCount;
+                  private TextBox txtBedsCount;
+                  private Label lblParts;
+                  private Label lblBeds;
+                  public InputsPanel() {
+                      InitializeComponent();
+                      CreateDynamicInputs();
+                      SetupStrictValidation();
+                  }
+                  private void CreateDynamicInputs() {
+                      lblParts = new Label { Text = "Количество деталей:", Top = 110, Left = 15, AutoSize = true };
+                      txtPartsCount = new TextBox { Text = "1", Top = 107, Left = 180, Width = 80 };
+                      lblBeds = new Label { Text = "Количество столов:", Top = 145, Left = 15, AutoSize = true };
+                      txtBedsCount = new TextBox { Text = "1", Top = 142, Left = 180, Width = 80 };
+                      this.Controls.Add(lblParts); this.Controls.Add(txtPartsCount);
+                      this.Controls.Add(lblBeds); this.Controls.Add(txtBedsCount);
+                  }
+                  private void SetupStrictValidation() {
+                      this.txtWeight.KeyPress += OnlyDecimal_KeyPress;
+                      this.txtHours.KeyPress += OnlyDecimal_KeyPress;
+                      this.txtPartsCount.KeyPress += OnlyInteger_KeyPress;
+                      this.txtBedsCount.KeyPress += OnlyInteger_KeyPress;
+                  }
+                  private void OnlyDecimal_KeyPress(object sender, KeyPressEventArgs e) {
+                      TextBox box = sender as TextBox;
+                      char sep = System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+                      if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && e.KeyChar != sep) { e.Handled = true; }
+                      if (e.KeyChar == sep && box.Text.Contains(sep.ToString())) { e.Handled = true; }
+                  }
+                  private void OnlyInteger_KeyPress(object sender, KeyPressEventArgs e) {
+                      if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar)) { e.Handled = true; }
+                  }
+                  public OrderInputs GetValues() {
+                      return new OrderInputs {
+                          WeightGrams = double.TryParse(txtWeight.Text, out double w) ? w : 0,
+                          Hours = double.TryParse(txtHours.Text, out double h) ? h : 0,
+                          PartsCount = int.TryParse(txtPartsCount.Text, out int p) ? Math.Max(1, p) : 1,
+                          BedsCount = int.TryParse(txtBedsCount.Text, out int b) ? Math.Max(1, b) : 1
+                      };
+                  }
+              }
+          }
+          EOF
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.AI_AGENT_TOKEN }}
-          commit-message: "🤖 Автоматические правки от ИИ-агента"
-          title: "🤖 Изменения от ИИ по задаче #${{ github.event.issue.number }}"
-          body: "ИИ-агент выполнил корректировки кода по вашему запросу. Вы можете проверить вкладку Files Changed, принять или отклонить изменения."
-          branch: ai-feature-branch
+          commit-message: "🤖 Добавлены принтеры, детали, столы и валидация"
+          title: "🤖 Обновление PrintCalc3D от ИИ-агента"
+          body: "Автоматические изменения: добавлены поля ввода столов/деталей, выпадающий список популярных принтеров в РФ, убран 10% запас пластика и настроена валидация ввода."
+          branch: ai-update-branch
