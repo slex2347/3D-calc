@@ -1,55 +1,54 @@
-name: 🤖 AI Core Developer Agent
+name: 🤖 AI Developer Agent
 on:
   issues:
     types: [opened, edited]
 
 jobs:
-  ai-agent-rewrite:
+  ai-agent-refactor:
     if: contains(github.event.issue.labels.*.name, 'ai-code')
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Скачивание репозитория
+      - name: 📥 Скачивание проекта
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.AI_AGENT_TOKEN }}
+          token: \${{ secrets.AI_AGENT_TOKEN }}
           fetch-depth: 0
 
-      - name: 🐍 Настройка окружения Python
+      - name: 🐍 Установка Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: ⚙️ Установка ИИ-агента модификации кода
+      - name: ⚙️ Установка ИИ-инструмента
         run: |
           python -m pip install --upgrade pip
-          pip install aider-chat  # Устанавливаем профессионального ИИ-автора кода
+          pip install aider-chat
 
-      - name: 🧠 Анализ задачи и автономное редактирование файлов
+      - name: 🧠 Автономное чтение и переписывание кода ИИ
         env:
-          GITHUB_TOKEN: ${{ secrets.AI_AGENT_TOKEN }}
-          # Используем вашу модель для генерации умного контекста изменений
-          OPENAI_API_KEY: ${{ secrets.AI_AGENT_TOKEN }} 
+          # Используем бесплатный встроенный ИИ-сервер GitHub для Actions
+          OPENAI_API_BASE: https://azure.com
+          OPENAI_API_KEY: \${{ secrets.AI_AGENT_TOKEN }}
+          AIDER_MODEL: openai/gpt-4o
         run: |
-          # Передаем текст вашей задачи (Issue) напрямую в ИИ-агент
-          echo "ИИ-Агент приступает к обработке вашей команды..."
-          
-          # Настраиваем Git, чтобы робот мог делать коммиты
+          # Настройка подписи робота
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@://github.com"
           
-          # Запуск ИИ-агента: он сам читает проект, понимает архитектуру C# 
-          # и вносит правки на основе текста вашей задачи (Issue Body)
-          aider --yes --message "${{ github.event.issue.title }}. Подробное описание задачи: ${{ github.event.issue.body }}"
+          # Агент получает текст вашей задачи, сам сканирует C# проект,
+          # понимает связь с InputBox и вносит умные точечные правки
+          aider --yes --message " github.event.issue.title . Подробное описание: {{ github.event.issue.body }}"
 
-      - name: 📦 Отправка Pull Request с проверкой изменений
+      - name: 📦 Отправка изменений в Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ secrets.AI_AGENT_TOKEN }}
+          token: \${{ secrets.AI_AGENT_TOKEN }}
           commit-message: "🤖 Код автоматически скорректирован ИИ-агентом"
-          title: "🤖 [ИИ-Агент] Правки по задаче #${{ github.event.issue.number }}"
+          title: "🤖 [ИИ-Агент] Выполнены правки по задаче #\${{ github.event.issue.number }}"
           body: |
-            Я проанализировал ваш проект и выполнил корректировки на основе вашей задачи:
-            **"${{ github.event.issue.title }}"**
+            Я полностью проанализировал ваш проект `PrintCalc3D` и выполнил корректировки на основе вашей команды:
             
-            Пожалуйста, перейдите во вкладку **Files changed**, чтобы отклонить или слить (Merge) изменения в ветку main.
+            **"\${{ github.event.issue.title }}"**
+            
+            Пожалуйста, перейдите во вкладку **Files changed** выше, чтобы принять (`Merge`) или отклонить (`Close`) изменения.
           branch: ai-dynamic-refactoring
