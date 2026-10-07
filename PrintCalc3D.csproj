@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>PrintCalc3D</AssemblyName>
+    <RootNamespace>PrintCalc3D</RootNamespace>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+    <Version>1.2.0</Version>
+
+    <!-- Позволяет собирать проект и не на Windows (например, на сервере сборки) -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!-- Экономия ресурсов: без фонового сборщика мусора (меньше потоков и памяти), только русские ресурсы -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <ServerGarbageCollector>false</ServerGarbageCollector>
+    <SatelliteResourceLanguages>ru</SatelliteResourceLanguages>
+
+    <!--
+      Скрытый браузер для чтения цен со страниц, которые строятся скриптом.
+      false (по умолчанию) — используется встроенный в Windows WebBrowser, сборка работает БЕЗ интернета и NuGet.
+      true — используется Edge WebView2 (точнее на современных сайтах); Visual Studio скачает пакет из NuGet.
+    -->
+    <UseWebView2>false</UseWebView2>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(UseWebView2)' == 'true'">
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2739.15" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(UseWebView2)' == 'true'">
+    <DefineConstants>$(DefineConstants);WEBVIEW2</DefineConstants>
+  </PropertyGroup>
+
+</Project>
